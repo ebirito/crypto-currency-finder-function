@@ -27,6 +27,7 @@ namespace CryptoCurrencyFinderFunction
             List<string> currenciesListedInDecentralizedButNotCentralized = currenciesListedInDecentralizedExchanges.Where(c => !currenciesListedInCentralizedExchanges.Contains(c)).OrderBy(x => x).ToList();
 
             List<CryptoCurrencyInfo> cryptoCurrencyInfoList = await GetCurrencyInfoList(currenciesListedInDecentralizedButNotCentralized);
+            cryptoCurrencyInfoList = cryptoCurrencyInfoList.OrderByDescending(c => c.VolumeLast24HoursUsd).ToList();
             return JsonConvert.SerializeObject(cryptoCurrencyInfoList);
         }
 
@@ -51,7 +52,10 @@ namespace CryptoCurrencyFinderFunction
                         Identifier = market["identifier"].ToString()
                     };
                     cryptoCurrencyInfo = await PopulateCurrencyInfo(cryptoCurrencyInfo);
-                    cryptoCurrencyInfos.Add(cryptoCurrencyInfo);
+                    if (cryptoCurrencyInfo.AtLeastOnePercentageIsPositive())
+                    {
+                        cryptoCurrencyInfos.Add(cryptoCurrencyInfo);
+                    }
                 }
             }
 
@@ -71,13 +75,16 @@ namespace CryptoCurrencyFinderFunction
             long volumeSecondToLast24HoursUsd = reversedHistory.Skip(1).Take(1).First()["volume24"]["usd"].ToObject<long>();
             long volumeLast72HoursUsd = reversedHistory.Take(3).Sum(x => x["volume24"]["usd"].ToObject<long>());
             long volumePrevious72HoursUsd = reversedHistory.Skip(3).Take(3).Sum(x => x["volume24"]["usd"].ToObject<long>());
+            double average24HourVolumePrevious72HoursUsd = reversedHistory.Skip(1).Take(3).Average(x => x["volume24"]["usd"].ToObject<long>());
 
             result.VolumeLast24HoursUsd = volumeLast24HoursUsd;
             result.VolumePrevious24HoursUsd = volumeSecondToLast24HoursUsd;
-            result.VolumeLast24HoursPercentChangeVsPrevious24Hours = volumeSecondToLast24HoursUsd == 0 ? "N/A" : String.Format("Value: {0:P2}.", CalculatePercentageChange(volumeSecondToLast24HoursUsd, volumeLast24HoursUsd));
+            result.VolumeLast24HoursPercentChangeVsPrevious24Hours = volumeSecondToLast24HoursUsd == 0 ? "N/A" : String.Format("{0:P2}.", CalculatePercentageChange(volumeSecondToLast24HoursUsd, volumeLast24HoursUsd));
             result.VolumeLast72HoursUsd = volumeLast72HoursUsd;
             result.VolumePrevious72HoursUsd = volumePrevious72HoursUsd;
-            result.VolumeLast72HoursPercentChangeVsPrevious72Hours = volumePrevious72HoursUsd == 0 ? "N/A" : String.Format("Value: {0:P2}.", CalculatePercentageChange(volumePrevious72HoursUsd, volumeLast72HoursUsd));
+            result.VolumeLast72HoursPercentChangeVsPrevious72Hours = volumePrevious72HoursUsd == 0 ? "N/A" : String.Format("{0:P2}.", CalculatePercentageChange(volumePrevious72HoursUsd, volumeLast72HoursUsd));
+            result.Average24HourVolumePrevious72HoursUsd = average24HourVolumePrevious72HoursUsd;
+            result.VolumeLast24HoursPercentChangeVsAverage24HourPrevious72Hours = average24HourVolumePrevious72HoursUsd == 0 ? "N/A" : String.Format("{0:P2}.", CalculatePercentageChange((long)average24HourVolumePrevious72HoursUsd, volumeLast24HoursUsd));
 
             return result;
         }
