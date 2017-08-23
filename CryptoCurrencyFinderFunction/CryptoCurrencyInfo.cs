@@ -12,6 +12,12 @@
         public string VolumeLast72HoursPercentChangeVsPrevious72Hours { get; set; }
         public double Average24HourVolumePrevious72HoursUsd { get; set; }
         public string VolumeLast24HoursPercentChangeVsAverage24HourPrevious72Hours { get; set; }
+        public double CurrentPriceUsd { get; set; }
+        public double YesterdaysPriceUsd { get; set; }
+        public string PricePercentChangeVsYesterday { get; set; }
+        public double DayBeforeYesterdaysPriceUsd { get; set; }
+        public string PricePercentChangeVs2DaysAgo { get; set; }
+        public double CurrentMarketCapUsd { get; set; }
 
         public bool AtLeastOnePercentageIsPositive()
         {
